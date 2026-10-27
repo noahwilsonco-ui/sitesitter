@@ -2,5 +2,17 @@
   "name": "website-qc",
   "main": "worker.mjs",
   "compatibility_date": "2026-10-01",
-  "workers_dev": true
+  "workers_dev": true,
+  "d1_databases": [
+    {
+      "binding": "SK_DB",
+      "database_name": "siteknight-workspaces",
+      "database_id": "a778ee4e-267b-46db-b5fb-1643d2b0ca41"
+    }
+  ],
+  "triggers": {
+    "crons": [
+      "17 * * * *"
+    ]
+  }
 }
