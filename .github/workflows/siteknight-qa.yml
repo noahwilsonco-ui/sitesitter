@@ -1,0 +1,69 @@
+name: Site Knight batch tests
+run-name: Site Knight ${{ inputs.batch || ((github.event_name == 'schedule' || contains(github.event.head_commit.message, '[qa full]')) && 'full' || 'quick') }} checks
+on:
+  push:
+    branches: [main]
+    paths: ['worker.mjs', 'wrangler.jsonc', 'tests/**', 'qa/**', '.github/workflows/siteknight-qa.yml']
+  schedule:
+    - cron: '23 13 * * *'
+  workflow_dispatch:
+    inputs:
+      batch:
+        description: Saved batch
+        type: choice
+        options: [quick, full]
+        default: quick
+      failed_from:
+        description: Retry only failed/untested checks from this previous run ID (optional)
+        type: string
+        default: ''
+permissions:
+  contents: read
+  actions: read
+concurrency:
+  group: siteknight-qa-${{ github.ref }}
+  cancel-in-progress: false
+jobs:
+  batch:
+    name: Run batch and publish report
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    env:
+      SK_BATCH: ${{ inputs.batch || ((github.event_name == 'schedule' || contains(github.event.head_commit.message, '[qa full]')) && 'full' || 'quick') }}
+      SK_RETRY_RUN: ${{ inputs.failed_from }}
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: '24'
+      - name: Load previous report for a failed-only retry
+        if: env.SK_RETRY_RUN != ''
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          if ! [[ "$SK_RETRY_RUN" =~ ^[0-9]+$ ]]; then echo 'Run ID must be numeric'; exit 1; fi
+          gh run download "$SK_RETRY_RUN" --repo "$GITHUB_REPOSITORY" --name siteknight-report --dir previous-report
+          echo 'SK_PREVIOUS_REPORT=previous-report/results.json' >> "$GITHUB_ENV"
+      - name: Install pinned browser automation
+        run: |
+          npm install --prefix "$RUNNER_TEMP/siteknight-qa" --no-package-lock --ignore-scripts playwright@1.62.1
+          echo "SITEKNIGHT_PLAYWRIGHT=$RUNNER_TEMP/siteknight-qa/node_modules/playwright" >> "$GITHUB_ENV"
+          "$RUNNER_TEMP/siteknight-qa/node_modules/.bin/playwright" install --with-deps chromium
+      - name: Run up to three independent checks at once
+        run: node qa/run.cjs
+      - name: Report setup failures as not tested
+        if: always()
+        run: |
+          if [ ! -f qa-report/results.json ]; then
+            SK_UNAVAILABLE='Runner setup failed before tests could start. Open the run steps for the cause.' node qa/run.cjs
+          fi
+      - name: Downloadable report, screenshots and PDFs
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: siteknight-report
+          path: qa-report/
+          retention-days: 30
+          if-no-files-found: error

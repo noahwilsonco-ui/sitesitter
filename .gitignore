@@ -1,0 +1,4 @@
+node_modules/
+qa-report/
+previous-report/
+*.test-output/

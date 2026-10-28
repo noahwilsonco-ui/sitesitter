@@ -1,0 +1,76 @@
+{
+  "quick": [
+    "scanner",
+    "navigation",
+    "mobile",
+    "workspace",
+    "self-check",
+    "runner"
+  ],
+  "full": [
+    "scanner",
+    "navigation",
+    "mobile",
+    "workspace",
+    "live-site",
+    "permaloc",
+    "self-check",
+    "runner"
+  ],
+  "cases": {
+    "scanner": {
+      "name": "Complete scanner workflow",
+      "script": "tests/scanner.cjs",
+      "timeoutSeconds": 90,
+      "steps": "Submit the controlled website; finish crawling; check errors, skipped downloads and a failed page; print the report."
+    },
+    "navigation": {
+      "name": "Finding navigation and complete printing",
+      "script": "tests/report-navigation.cjs",
+      "timeoutSeconds": 75,
+      "steps": "Open a spelling finding, jump forwards and backwards, then inspect the full print report."
+    },
+    "mobile": {
+      "name": "Mobile map, inventory and tools",
+      "script": "tests/mobile.cjs",
+      "timeoutSeconds": 75,
+      "steps": "Open a 38-page map at 320–750px; search and collapse branches; open details; check inventory and every workspace panel."
+    },
+    "workspace": {
+      "name": "Saved scans, email, reviews and monitoring",
+      "script": "tests/workspace.cjs",
+      "timeoutSeconds": 120,
+      "steps": "Save two scans; check email; share a page with another browser; post feedback; run scheduled monitoring; reload the workspace."
+    },
+    "live-site": {
+      "name": "Deployed Site Knight desktop and mobile",
+      "script": "tests/live.cjs",
+      "timeoutSeconds": 75,
+      "url": "https://www.siteknight.tools",
+      "steps": "Open deployed Site Knight; inspect scan controls and all tools at desktop and phone widths."
+    },
+    "permaloc": {
+      "name": "Permaloc live page sample",
+      "script": "tests/live.cjs",
+      "timeoutSeconds": 120,
+      "url": "https://permaloc.com",
+      "pages": [
+        "/",
+        "/edging/cleanline/"
+      ],
+      "steps": "Ask the deployed scanner to load two saved Permaloc URLs; inspect returned HTML and reject CAD documents as pages. This is a sample, not a full crawl."
+    },
+    "self-check": {
+      "name": "Tester detects a deliberate failure",
+      "script": "tests/self-check.cjs",
+      "timeoutSeconds": 75,
+      "steps": "Remove the known fixture spelling error; verify the assertion fails, exits nonzero and captures a screenshot. This expected failure must be caught for the self-check to pass."
+    },
+    "runner": {
+      "name": "Batch timeouts, honest reports and failed-only retry",
+      "script": "qa/self-test.cjs",
+      "timeoutSeconds": 25,
+      "steps": "Run controlled passing, failing, hanging and incomplete tests. Repair failures and verify only failed checks rerun. Verify setup failures stay Not tested."
+    }
+  }
+}
